@@ -1,4 +1,4 @@
-(use posix args fmt fmt-unicode fmt-color format sqlite3 matchable)
+(use posix args fmt fmt-unicode fmt-color sqlite3)
 
 ; Data
 
