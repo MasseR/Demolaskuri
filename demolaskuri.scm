@@ -1,4 +1,4 @@
-(use args fmt fmt-unicode fmt-color format sqlite3 matchable)
+(use posix args fmt fmt-unicode fmt-color format sqlite3 matchable)
 
 ; Data
 
@@ -26,7 +26,16 @@
 
 ; Database
 
-(define *db* (open-database "demonstrations.db"))
+(define home
+  (string-join (list
+                     (get-environment-variable "HOME")
+                     ".local"
+                     "share"
+                     "demolaskuri") "/"))
+(create-directory home #t)
+
+(define *db*
+  (open-database (string-join (list home "demonstrations.db") "/")))
 
 (define (init-db)
   (execute *db* "create table if not exists courses (name primary key, times, excs, required)")
