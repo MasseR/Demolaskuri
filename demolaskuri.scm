@@ -1,4 +1,6 @@
-(use fmt fmt-unicode fmt-color format sqlite3 matchable)
+(use args fmt fmt-unicode fmt-color format sqlite3 matchable)
+
+; Data
 
 (define-record course
                name
@@ -12,16 +14,6 @@
 (define (course-exc-required course)
   (* (course-total-exc course) (course-required course)))
 
-(define (pretty-percentage percent)
-  (cat (num (* 100 percent) 10 2) (dsp "%"))) 
-
-(define (course-percentage-pretty course)
-  (let* ((required (course-required course))
-        (percent (course-percentage course))
-        (pretty (pretty-percentage percent)))
-    (if (>= percent required)
-      (fmt-green pretty)
-      (fmt-red pretty))))
 
 (define (create-course name done total-exc required)
   (define (with-default x def)
@@ -31,6 +23,8 @@
     (with-default done 0)
     (with-default total-exc 0)
     (with-default required 0)))
+
+; Database
 
 (define *db* (open-database "demonstrations.db"))
 
@@ -65,6 +59,19 @@
 (define (row-to-course row)
   (apply create-course row))
 
+; Pretty printing
+
+(define (pretty-percentage percent)
+  (cat (num (* 100 percent) 10 2) (dsp "%"))  
+
+(define (course-percentage-pretty course)
+  (let* ((required (course-required course))
+        (percent (course-percentage course))
+        (pretty (pretty-percentage percent)))
+    (if (>= percent required)
+      (fmt-green pretty)
+      (fmt-red pretty))))
+
 (define (pretty-print-tabular courses)
   (let* ((name-column-width (+ 2 (get-max-length!)))
          (separator (dsp "|"))
@@ -88,8 +95,4 @@
                                                            course-required))))
          courses)))))
 
-(define (enough-done? course)
-  (let ((done (course-done course)) 
-        (total (course-total-exc course))
-        (required (course-required course)))
-    (> (/ (if (sql-null#sql-null? done) 0 done) total) required)))
+
