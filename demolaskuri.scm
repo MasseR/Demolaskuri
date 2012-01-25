@@ -1,10 +1,27 @@
-(use format sqlite3 matchable)
+(use fmt fmt-unicode fmt-color format sqlite3 matchable)
 
 (define-record course
                name
                done
                total-exc
                required)
+
+(define (course-percentage course)
+  (/ (course-done course) (course-total-exc course)))
+
+(define (course-exc-required course)
+  (* (course-total-exc course) (course-required course)))
+
+(define (pretty-percentage percent)
+  (cat (num (* 100 percent) 10 2) (dsp "%"))) 
+
+(define (course-percentage-pretty course)
+  (let* ((required (course-required course))
+        (percent (course-percentage course))
+        (pretty (pretty-percentage percent)))
+    (if (>= percent required)
+      (fmt-green pretty)
+      (fmt-red pretty))))
 
 (define (create-course name done total-exc required)
   (define (with-default x def)
@@ -39,8 +56,37 @@
 (define (get-courses!)
   (map-row create-course *db* "select name, (select sum(done) from demonstrations where name=courses.name) as done, (times * excs * 1.0) as total_exc, required from courses"))
 
+(define (get-max-length!)
+  (let ((max-length (car (first-row *db* "select max(length(name)) from courses"))))
+    (if (sql-null#sql-null? max-length)
+      0
+      max-length)))
+
 (define (row-to-course row)
   (apply create-course row))
+
+(define (pretty-print-tabular courses)
+  (let* ((name-column-width (+ 2 (get-max-length!)))
+         (separator (dsp "|"))
+         (row (lambda (name total done percent required)
+                (apply cat
+                       (cons separator
+                       (intersperse (list
+                                      (fmt-unicode (pad/both name-column-width (dsp name)))
+                                      (pad/both 10 total) 
+                                      (pad/both 10 done) 
+                                      (fmt-unicode (pad/both 12 percent))
+                                      (pad/both 10 required)
+                                      nl)
+                                    separator)))))
+        (header (row "Course name" "Total" "Done" "Percent" "Required"))) 
+    (apply cat (cons header (map (lambda (course)
+           (apply row (map (lambda (fn) (fn course)) (list course-name
+                                                           course-total-exc
+                                                           course-done
+                                                           course-percentage-pretty
+                                                           course-required))))
+         courses)))))
 
 (define (enough-done? course)
   (let ((done (course-done course)) 
