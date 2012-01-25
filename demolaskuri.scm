@@ -62,7 +62,7 @@
 ; Pretty printing
 
 (define (pretty-percentage percent)
-  (cat (num (* 100 percent) 10 2) (dsp "%"))  
+  (cat (num (* 100 percent) 10 2) (dsp "%")))
 
 (define (course-percentage-pretty course)
   (let* ((required (course-required course))
@@ -96,3 +96,27 @@
          courses)))))
 
 
+(define (list-all)
+  (fmt #t (pretty-print-tabular (get-courses!))))
+(define opts
+  (list
+    (args:make-option (d done) #:required "How many excercises have you done")
+    (args:make-option (c course) #:required "Course name")
+    (args:make-option (l list) #:none "List courses" (list-all))
+    (args:make-option (h help) #:none "Help text" (usage))))
+
+(define (usage)
+  (print "Usage: " (car (argv)) " [options..]")
+  (newline)
+  (print (args:usage opts))
+  (exit 0))
+
+(receive (options operands)
+         (args:parse (command-line-arguments) opts)
+         (let ((course (alist-ref 'course options))
+               (done (alist-ref 'done options)))
+           (if (and course done)
+             (mark-as-done! course done))
+           (if (or course done)
+             (usage))
+           (list-all))) 
