@@ -115,6 +115,10 @@
   (list
     (args:make-option (d done) #:required "How many excercises have you done")
     (args:make-option (c course) #:required "Course name")
+    (args:make-option (n new) #:none "Create a new course")
+    (args:make-option (t times) #:required "How many demonstrations are held")
+    (args:make-option (e excercises) #:required "How many excercises are in a demonstration")
+    (args:make-option (r required) #:required "How many percentage of the assignments are required")
     (args:make-option (l list) #:none "List courses" (list-all))
     (args:make-option (h help) #:none "Help text" (usage))))
 
@@ -127,8 +131,16 @@
 (receive (options operands)
          (args:parse (command-line-arguments) opts)
          (let ((course (alist-ref 'course options))
-               (done (alist-ref 'done options)))
+               (done (alist-ref 'done options))
+               (new (assq 'new options))
+               (times (alist-ref 'times options))
+               (excercises (alist-ref 'excercises options))
+               (required (alist-ref 'required options)))
            (cond ((and course done) (mark-as-done! course done))
+                 ((and course new times excercises required)
+                  (let ((required (string->number required))) 
+                    (add-course! course times excercises 
+                                  (if (> required 1) (/ required 100) required))))
                  (course (show-course course))
                  (done (usage))
                  (else (list-all)))
