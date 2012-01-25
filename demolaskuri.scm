@@ -105,8 +105,12 @@
          courses)))))
 
 
+(define (list-courses courses)
+  (fmt #t (pretty-print-tabular courses)))
 (define (list-all)
-  (fmt #t (pretty-print-tabular (get-courses!))))
+  (list-courses (get-courses!)))
+(define (show-course name)
+  (list-courses (list (get-course! name))))
 (define opts
   (list
     (args:make-option (d done) #:required "How many excercises have you done")
@@ -124,8 +128,8 @@
          (args:parse (command-line-arguments) opts)
          (let ((course (alist-ref 'course options))
                (done (alist-ref 'done options)))
-           (if (and course done)
-             (mark-as-done! course done))
-           (if (or course done)
-             (usage))
-           (list-all))) 
+           (cond ((and course done) (mark-as-done! course done))
+                 (course (show-course course))
+                 (done (usage))
+                 (else (list-all)))
+           ))
